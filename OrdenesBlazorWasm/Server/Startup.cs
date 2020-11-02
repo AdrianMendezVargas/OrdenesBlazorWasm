@@ -6,6 +6,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Linq;
+using OrdenesBlazorWasm.Server.DAL;
+using Microsoft.EntityFrameworkCore;
+using Blazored.Toast;
 
 namespace OrdenesBlazorWasm.Server {
     public class Startup {
@@ -21,6 +24,10 @@ namespace OrdenesBlazorWasm.Server {
 
             services.AddControllersWithViews();
             services.AddRazorPages();
+            services.AddDbContext<Contexto>(options => 
+                options.UseSqlite(Configuration.GetConnectionString("Sqlite"))
+                .EnableSensitiveDataLogging()
+            );
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

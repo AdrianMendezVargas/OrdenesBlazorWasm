@@ -1,0 +1,191 @@
+﻿@page "/registro-ordenes"
+@inject IToastService toast
+@inject HttpClient HttpClient
+
+<div class="container mt-3">
+    <div class="card shadow-lg">
+        <div class="card-header bg-dark">
+            <div class="form-row">
+                <div class="col-sm flex-shrink-1">
+                    <h3 class="text-light">
+                        <i class="oi oi-list-rich mr-3" />
+                        Ordenes
+                    </h3>
+                </div>
+                <div class="col-sm">
+                    <button class="btn btn-dark border-light" @onclick="AgregarOrden">
+                        <i class="oi oi-plus" />
+                        Agregar
+                    </button>
+                </div>
+                <div class="col-sm">
+                    <select @bind="indexSelect" class="custom-select">
+                        <option value="0">Filtrar por</option>
+                        <option value="1">OrdenId</option>
+                    </select>
+                </div>
+                <div class="col-sm">
+                    <input class="form-control w-100" type="@(indexSelect == 1 ? "number" : "text")" @bind="criterioDeBusqueda" />
+                </div>
+                <div class="col-sm text-center">
+                    <button class="btn btn-dark border-light" @onclick="FiltarOrdenes">
+                        <i class="oi oi-magnifying-glass" />
+                        Buscar
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body overflow-auto">
+            @if (Ordenes == null || OrdenesFiltradas == null) {
+                <div>
+                    <h4>Cargando...</h4>
+                </div>
+            } else {
+                <table class="table table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Orden Id</th>
+                            <th>Supridor Id</th>
+                            <th>Fecha</th>
+                            <th>Monto</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var orden in OrdenesFiltradas) {
+                            <tr>
+                                <td>@orden.OrdenId</td>
+                                <td>@orden.SuplidorId</td>
+                                <td>@orden.Fecha</td>
+                                <td>@string.Format("{0:c}" , orden.Monto)</td>
+                                <td><button @onclick="()=>ModificarOrden(orden)" class="btn btn-outline-dark">Ver</button></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+@if (MostraDialogoEditor) {
+    Title = EsNuevaOrden ? "Nueva Orden" : "Modificar Orden";
+
+    <Dialogo Title="@Title" OnClose="OcultarDialogo">
+        <Body>
+            <EditForm id="form-ordenes" Model="OrdenEnModificacion" OnValidSubmit="Guardar">
+                <FieldsOrden Orden="OrdenEnModificacion" />
+                <DataAnnotationsValidator />
+            </EditForm>
+        </Body>
+        <Footer>
+            <button type="button" disabled="@(!EsNuevaOrden)" class="btn btn-outline-warning" @onclick="Nueva">Nueva</button>
+            <input type="submit" form="form-ordenes" class="btn btn-outline-success" value="Guardar" />
+            <button type="button" disabled="@(EsNuevaOrden)" class="btn btn-outline-danger" @onclick="Eliminar">Eliminar</button>
+        </Footer>
+    </Dialogo>
+}
+
+
+
+@code {
+
+    bool MostraDialogoEditor = false;
+    bool EsNuevaOrden = false;
+    string Title;
+
+    int indexSelect = 0; //indice actual del select
+    string criterioDeBusqueda;
+
+    Orden OrdenEnModificacion = new Orden();
+
+    public List<Orden> Ordenes { get; set; }
+    public List<Orden> OrdenesFiltradas { get; set; }
+
+    protected async override Task OnInitializedAsync() {
+        Ordenes = await HttpClient.GetFromJsonAsync<List<Orden>>("ordenes");
+        OrdenesFiltradas = Ordenes;
+    }
+
+    void ModificarOrden(Orden orden) {
+        OrdenEnModificacion = orden;
+        EsNuevaOrden = false;
+        MostraDialogoEditor = true;
+    }
+
+    void AgregarOrden() {
+        OrdenEnModificacion = new Orden();
+        EsNuevaOrden = true;
+        MostraDialogoEditor = true;
+    }
+
+    async Task OcultarDialogo() {
+        MostraDialogoEditor = false;
+        Ordenes = await HttpClient.GetFromJsonAsync<List<Orden>>("ordenes");
+        QuitarFiltros();
+    }
+
+    void QuitarFiltros() {
+        indexSelect = 0;
+        criterioDeBusqueda = "";
+        FiltarOrdenes();
+    }
+
+    void Nueva() {
+        OrdenEnModificacion = new Orden();
+    }
+    async Task Guardar() {
+
+
+
+        var response = await HttpClient.PostAsJsonAsync("ordenes" , OrdenEnModificacion);
+        var guardado = await response.Content.ReadFromJsonAsync<bool>();
+
+        if (guardado) {
+              toast.ShowSuccess("Guardado ");
+            Nueva();
+            await OcultarDialogo();
+        } else {
+
+             toast.ShowError("Error al guardar");
+        }
+
+    }
+
+    async Task Eliminar() {
+        bool eliminado;
+
+        var response = await HttpClient.DeleteAsync($"ordenes/{OrdenEnModificacion.OrdenId}");
+
+        eliminado = await response.Content.ReadFromJsonAsync<bool>();
+
+        if (eliminado) {
+            toast.ShowSuccess("Eliminado");
+            Nueva();
+            await OcultarDialogo();
+        } else {
+
+            toast.ShowError("Error al eliminar");
+        }
+    }
+
+    void FiltarOrdenes() {
+
+        if (indexSelect == 0) {//Todos
+
+            OrdenesFiltradas = Ordenes.Where(e => true).ToList();
+
+        } else if (indexSelect == 1) {//OrdenId
+
+            if (int.TryParse(criterioDeBusqueda , out int Id)) {
+
+                OrdenesFiltradas = Ordenes.Where(e => e.OrdenId == Id).ToList();
+            }
+
+        }
+
+    }
+
+
+
+}

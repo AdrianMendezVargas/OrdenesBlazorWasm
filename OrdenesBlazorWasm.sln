@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30523.141
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrdenesBlazorWasm.Server", "OrdenesBlazorWasm\Server\OrdenesBlazorWasm.Server.csproj", "{2D70287F-A7DB-441C-AC54-760C34D54E74}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OrdenesBlazorWasm.Server", "OrdenesBlazorWasm\Server\OrdenesBlazorWasm.Server.csproj", "{2D70287F-A7DB-441C-AC54-760C34D54E74}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrdenesBlazorWasm.Client", "OrdenesBlazorWasm\Client\OrdenesBlazorWasm.Client.csproj", "{856F724F-E01E-41FD-A739-0F74F41D205B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OrdenesBlazorWasm.Client", "OrdenesBlazorWasm\Client\OrdenesBlazorWasm.Client.csproj", "{856F724F-E01E-41FD-A739-0F74F41D205B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrdenesBlazorWasm.Shared", "OrdenesBlazorWasm\Shared\OrdenesBlazorWasm.Shared.csproj", "{5A23C0FA-2C9A-4DCA-A898-E4CAF33F1EA5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OrdenesBlazorWasm.Shared", "OrdenesBlazorWasm\Shared\OrdenesBlazorWasm.Shared.csproj", "{5A23C0FA-2C9A-4DCA-A898-E4CAF33F1EA5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

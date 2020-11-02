@@ -1,0 +1,178 @@
+﻿@inject HttpClient HttpClient
+
+<style>
+    .form-field {
+        display: flex;
+        margin: 0.5rem;
+        width: 80%;
+    }
+
+        .form-field > label {
+            width: 8rem;
+        }
+
+        .form-field > div {
+            flex-grow: 1;
+        }
+
+        .form-field input {
+            width: 100%;
+        }
+</style>
+
+
+<div class="container">
+    <div class="row">
+        <div class="form-field">
+            <div class="mb-2">
+                <MatAutocompleteList Items="Suplidores" TItem="Suplidor" Label="Suplidor Id" CustomStringSelector="s => s.Nombre"  class="form-control" StringValue="@Orden.SuplidorId.ToString()" ShowClearButton="true" ValueChanged="(Suplidor s)=>SuplidorSeleccionadoChanged(s)">
+                    <ItemTemplate>
+                        <div style="display: flex; flex-direction: row; width: 100%;">
+                            <div style="flex: 1;">@context.SuplidorId</div>
+                            <div style="width: 150px;">@context.Nombre</div>
+                        </div>
+                    </ItemTemplate>
+                </MatAutocompleteList><br />
+                <ValidationMessage For="()=>Orden.SuplidorId" />
+            </div>
+        </div>
+    </div>
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <div class="form-row" style="display: flex; flex-direction: row; width: 100%;">
+                <div class="mt-3">
+                    <h4>Pedidos</h4>
+                </div>
+                <div >
+                    <MatAutocompleteList Items="Productos" TItem="Producto" class="form-control" CustomStringSelector="p => p.Descripcion" Label="Producto Id" StringValue="@NuevoPedido.ProductoId.ToString()" ValueChanged="(Producto p)=>ProductoSeleccionadoChanged(p = new Producto())">
+                        <ItemTemplate>
+                            <div style="display: flex; flex-direction: row; width: 100%;">
+                                <div style="flex: 1;">@context.Descripcion</div>
+                                <div style="width: 150px;">@context.Precio$</div>
+                            </div>
+                        </ItemTemplate>
+                    </MatAutocompleteList>
+                    <ValidationMessage For="()=>NuevoPedido.ProductoId" />
+                </div>
+                <div >
+                    <MatNumericUpDownField class="form-control" style="width: 150px; margin: 0;" Label="Cantidad" @bind-Value="NuevoPedido.Cantidad" />
+                    <ValidationMessage For="()=>NuevoPedido.Cantidad" />
+                </div>
+                <div >
+                    <button type="submit" form="mora-form" class="btn btn-dark border-white ml-4 mt-2">
+                        <i class="oi oi-plus" />
+                        Añadir
+                    </button>
+                </div>
+
+            </div>
+        </div>
+        <div class="card-body">
+            <EditForm id="mora-form" Model="NuevoPedido" OnValidSubmit="AgregarPedido">
+
+                <table class="table table-hover table-sm w-100">
+                    <thead>
+                        <tr>
+                            <th>Producto Id</th>
+                            <th>Cantidad</th>
+                            <th>Costo</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var pedido in Orden.Pedidos) {
+                            <tr>
+                                <td>@pedido.ProductoId</td>
+                                <td>@pedido.Cantidad</td>
+                                <td>@pedido.Costo.ToString("C")</td>
+                                <td>
+                                    <button type="button" class="btn btn-danger" @onclick="()=>EliminarPedido(pedido)">
+                                        <i class="oi oi-trash" />
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    @if (Orden.Pedidos.Count > 1) {
+                        <tfoot class="bg-dark text-light btn btn-dark">
+                            <tr>
+                                <td>Total:</td>
+                                <td>@Orden.Monto.ToString("C")</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    }
+
+                </table>
+                <DataAnnotationsValidator />
+            </EditForm>
+
+        </div>
+    </div>
+
+
+</div>
+
+
+
+
+
+@code {
+    [Parameter] public Orden Orden { get; set; }
+
+    Pedido NuevoPedido = new Pedido();
+
+    public List<Producto> Productos { get; set; } = new List<Producto>();
+    public List<Suplidor> Suplidores { get; set; } = new List<Suplidor>();
+
+    protected override async Task OnParametersSetAsync() {
+        Productos = await HttpClient.GetFromJsonAsync<List<Producto>>("Productos");
+        Suplidores = await HttpClient.GetFromJsonAsync<List<Suplidor>>("suplidores");
+    }
+
+    void EliminarPedido(Pedido mora) {
+        Orden.Pedidos.Remove(mora);
+        Orden.CalcularMonto();
+    }
+
+    async Task AgregarPedido() {
+        Pedido pedido = new Pedido {
+            OrdenId = Orden.OrdenId,
+            ProductoId = NuevoPedido.ProductoId,
+            Cantidad = NuevoPedido.Cantidad,
+        };
+
+        pedido.Costo = await CalcularCostoPedido(pedido);
+
+        Orden.Pedidos.Add(pedido);
+        Orden.CalcularMonto();
+
+        NuevoPedido = new Pedido();
+    }
+
+    void SuplidorSeleccionadoChanged(Suplidor suplidor) {
+
+        if (suplidor != null) {
+            Orden.SuplidorId = suplidor.SuplidorId;
+        }
+    }
+
+    void ProductoSeleccionadoChanged(Producto producto) {
+        if (producto != null) {
+            NuevoPedido.ProductoId = producto.ProductoId;
+        }
+    }
+
+    async Task<decimal> CalcularCostoPedido(Pedido pedido) {
+        decimal costo = -1;
+
+        Producto producto = await HttpClient.GetFromJsonAsync<Producto>($"Productos/{pedido.ProductoId}");
+
+        if (producto != null) {
+            costo = producto.Precio * pedido.Cantidad;
+        }
+
+        return costo;
+    }
+
+}
